@@ -14,7 +14,7 @@ export default function WelcomeScreen({ navigation }: Props) {
         >
             <View style={styles.overlay}>
                 <Text style={styles.name}>Kevin Lasluisa</Text>
-                <Text style={styles.title}>Bienvenido a Car Manager</Text>
+                <Text style={styles.title}>Bienvenido a AutoDecor</Text>
                 <TouchableOpacity
                     style={styles.button}
                     onPress={() => navigation.navigate('MainApp')}

@@ -9,7 +9,7 @@ import {
     Alert,
     ActivityIndicator,
 } from 'react-native';
-import { ref, get } from 'firebase/database';
+import { ref, onValue, get } from 'firebase/database';
 import { database } from '../config/firebase';
 import { Auto } from '../types/types';
 import Informacion from '../components/Informacion';
@@ -19,6 +19,26 @@ const Screen2: React.FC = () => {
     const [auto, setAuto] = useState<Auto | null>(null);
     const [autos, setAutos] = useState<Auto[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
+
+    // Escuchar cambios en la lista de autos
+    useEffect(() => {
+        const autosRef = ref(database, 'autos');
+        const unsubscribe = onValue(autosRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const autosList = Object.keys(data).map((key) => ({
+                    id: key,
+                    ...data[key],
+                }));
+                setAutos(autosList);
+            } else {
+                setAutos([]);
+            }
+        });
+
+        // Limpieza al desmontar el componente
+        return () => unsubscribe();
+    }, []);
 
     const buscarPorId = async (): Promise<void> => {
         if (!id.trim()) {
@@ -30,12 +50,12 @@ const Screen2: React.FC = () => {
         try {
             const autoRef = ref(database, `autos/${id}`);
             const snapshot = await get(autoRef);
-            
+
             if (snapshot.exists()) {
                 const autoData = snapshot.val();
                 setAuto({
                     id,
-                    ...autoData
+                    ...autoData,
                 } as Auto);
             } else {
                 Alert.alert('Error', 'No se encontró el auto');
@@ -48,35 +68,7 @@ const Screen2: React.FC = () => {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        const cargarAutos = async () => {
-            setLoading(true);
-            try {
-                const autosRef = ref(database, 'autos');
-                const snapshot = await get(autosRef);
-                
-                if (snapshot.exists()) {
-                    const autosData = snapshot.val();
-                    const autosArray: Auto[] = Object.keys(autosData).map(key => ({
-                        id: key,
-                        ...autosData[key]
-                    }));
-                    setAutos(autosArray);
-                } else {
-                    setAutos([]);
-                }
-            } catch (error) {
-                console.error('Error al cargar autos:', error);
-                Alert.alert('Error', 'Error al cargar la lista de autos');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        cargarAutos();
-    }, []);
-
+    
     const renderItem = ({ item }: { item: Auto }) => (
         <Informacion
             item={item}
